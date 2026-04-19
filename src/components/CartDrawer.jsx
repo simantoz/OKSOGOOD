@@ -1,16 +1,26 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Trash2, Minus, Plus, MessageCircle } from 'lucide-react';
+import { X, Trash2, Minus, Plus, MessageCircle, User, CreditCard } from 'lucide-react';
 import { ADMIN_PHONE } from '../data';
 
 const CartDrawer = ({ isOpen, onClose, cart, updateQuantity, removeItem }) => {
+  const [customerName, setCustomerName] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState('QRIS');
+  
   const totalPrice = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   
   const handleCheckout = () => {
     if (cart.length === 0) return;
+    if (!customerName.trim()) {
+      alert("Tolong isi nama kamu dulu ya!");
+      return;
+    }
     
     // WhatsApp Checkout Engine
     let message = "Halo Admin OkSoGood! Saya mau ikut Pre-Order:\n\n";
+    message += `👤 *Nama Pelanggan:* ${customerName}\n`;
+    message += `💳 *Metode Bayar:* ${paymentMethod}\n\n`;
+    message += "----------- *DETAIL PESANAN* -----------\n";
     
     cart.forEach((item, index) => {
       message += `${index + 1}. *${item.name}* ${item.variant ? `(${item.variant})` : ''}\n`;
@@ -18,6 +28,7 @@ const CartDrawer = ({ isOpen, onClose, cart, updateQuantity, removeItem }) => {
       message += `   Subtotal: Rp ${(item.price * item.quantity).toLocaleString('id-ID')}\n\n`;
     });
     
+    message += `----------------------------------------\n`;
     message += `*Total Pembayaran: Rp ${totalPrice.toLocaleString('id-ID')}*\n\n`;
     message += "Apakah kuota PO masih tersedia? Terima kasih!";
     
@@ -62,7 +73,7 @@ const CartDrawer = ({ isOpen, onClose, cart, updateQuantity, removeItem }) => {
                       <div className="item-row">
                         <h4>{item.name}</h4>
                         <button className="remove-btn" onClick={() => removeItem(item.id, item.variant)}>
-                          <Trash2 size={16} />
+                           <Trash2 size={16} />
                         </button>
                       </div>
                       {item.variant && <span className="item-variant">Varian: {item.variant}</span>}
@@ -82,16 +93,43 @@ const CartDrawer = ({ isOpen, onClose, cart, updateQuantity, removeItem }) => {
             
             {cart.length > 0 && (
               <div className="cart-footer">
-                <div className="summary-row">
-                  <span>Subtotal</span>
-                  <span>Rp {totalPrice.toLocaleString('id-ID')}</span>
+                <div className="checkout-form">
+                  <div className="input-group">
+                    <label><User size={16} /> Nama Kamu</label>
+                    <input 
+                      type="text" 
+                      placeholder="Masukkan nama lengkap..."
+                      value={customerName}
+                      onChange={(e) => setCustomerName(e.target.value)}
+                    />
+                  </div>
+                  <div className="input-group">
+                    <label><CreditCard size={16} /> Metode Pembayaran</label>
+                    <select 
+                      value={paymentMethod}
+                      onChange={(e) => setPaymentMethod(e.target.value)}
+                    >
+                      <option value="QRIS">QRIS (Gopay/OVO/ShopeePay)</option>
+                      <option value="Bank BCA">Transfer Bank BCA</option>
+                    </select>
+                  </div>
                 </div>
-                <div className="summary-row total">
-                  <span>Total Harga</span>
-                  <span>Rp {totalPrice.toLocaleString('id-ID')}</span>
+
+                <div className="summary-section">
+                  <div className="summary-row">
+                    <span>Subtotal</span>
+                    <span>Rp {totalPrice.toLocaleString('id-ID')}</span>
+                  </div>
+                  <div className="summary-row total">
+                    <span>Total Harga</span>
+                    <span>Rp {totalPrice.toLocaleString('id-ID')}</span>
+                  </div>
                 </div>
                 
-                <button className="checkout-btn" onClick={handleCheckout}>
+                <button 
+                  className={`checkout-btn ${!customerName.trim() ? 'disabled' : ''}`} 
+                  onClick={handleCheckout}
+                >
                   <MessageCircle size={20} />
                   Checkout via WhatsApp
                 </button>
@@ -218,42 +256,89 @@ const CartDrawer = ({ isOpen, onClose, cart, updateQuantity, removeItem }) => {
             }
             .cart-footer {
               padding: 24px;
-              background: var(--light-gray);
-              border-top: 1px solid #eee;
+              background: #fdfaf5;
+              border-top: 1px solid #ddd;
+              box-shadow: 0 -10px 20px rgba(0,0,0,0.02);
+            }
+            .checkout-form {
+              margin-bottom: 24px;
+              display: flex;
+              flex-direction: column;
+              gap: 16px;
+            }
+            .input-group {
+              display: flex;
+              flex-direction: column;
+              gap: 8px;
+            }
+            .input-group label {
+              font-size: 13px;
+              font-weight: 700;
+              color: var(--dark);
+              display: flex;
+              align-items: center;
+              gap: 6px;
+              text-transform: uppercase;
+              letter-spacing: 0.5px;
+            }
+            .input-group input, .input-group select {
+              padding: 12px 16px;
+              border: 2px solid #eee;
+              border-radius: 12px;
+              font-size: 15px;
+              transition: all 0.3s;
+              outline: none;
+              background: white;
+            }
+            .input-group input:focus, .input-group select:focus {
+              border-color: var(--secondary);
+              box-shadow: 0 0 0 4px rgba(255, 126, 32, 0.1);
+            }
+            .summary-section {
+              padding: 16px 0;
+              border-top: 1px dashed #ddd;
+              border-bottom: 1px dashed #ddd;
+              margin-bottom: 16px;
             }
             .summary-row {
               display: flex;
               justify-content: space-between;
-              margin-bottom: 12px;
+              margin-bottom: 8px;
               font-size: 14px;
               color: var(--gray);
             }
             .summary-row.total {
-              margin-top: 16px;
-              padding-top: 16px;
-              border-top: 1px solid #ddd;
+              margin-top: 8px;
               font-weight: 800;
-              font-size: 18px;
+              font-size: 20px;
               color: var(--dark);
             }
             .checkout-btn {
               width: 100%;
-              margin-top: 24px;
-              padding: 16px;
+              padding: 18px;
               background: #25D366;
               color: white;
-              border-radius: 12px;
-              font-weight: 700;
+              border-radius: 14px;
+              font-weight: 800;
               font-size: 16px;
               display: flex;
               align-items: center;
               justify-content: center;
               gap: 10px;
-              box-shadow: 0 4px 15px rgba(37, 211, 102, 0.3);
+              box-shadow: 0 8px 20px rgba(37, 211, 102, 0.3);
+              cursor: pointer;
+              transition: all 0.3s;
             }
-            .checkout-btn:hover {
+            .checkout-btn:hover:not(.disabled) {
               background: #128C7E;
               transform: translateY(-2px);
+              box-shadow: 0 12px 25px rgba(37, 211, 102, 0.4);
+            }
+            .checkout-btn.disabled {
+              background: #ccc;
+              box-shadow: none;
+              cursor: not-allowed;
+              transform: none;
             }
           `}} />
         </div>
